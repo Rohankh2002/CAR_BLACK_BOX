@@ -1,0 +1,88 @@
+/*
+ * Name: Rohan K H
+ * Date: 05/01/2025
+ * Description: The "Car Black Box" project uses Embedded C programming to monitor and record the time,
+ *              gear position, and speed of a car during the last 10 events. An external EEPROM is
+ *              utilized to store this data, ensuring retention even when the system powers off. 
+ *              The project integrates a CLCD (Character LCD) for real-time display of information 
+ *              and employs an ADC (Analog-to-Digital Converter) to measure and process the car's speed. 
+ *              This system is implemented on a development kit for prototyping and testing.
+ */
+#include <xc.h>
+
+void init_i2c(void)
+{
+	/* Set SCL and SDA pins as inputs */
+	TRISC3 = 1;
+	TRISC4 = 1;
+	/* Set I2C master mode */
+	SSPCON1 = 0x28;
+
+	SSPADD = 0x31;
+	/* Use I2C levels, worked also with '0' */
+	CKE = 0;
+	/* Disable slew rate control  worked also with '0' */
+	SMP = 1;
+	/* Clear SSPIF interrupt flag */
+	SSPIF = 0;
+	/* Clear bus collision flag */
+	BCLIF = 0;
+}
+
+void i2c_idle(void)
+{
+	while (!SSPIF);
+	SSPIF = 0;
+}
+
+void i2c_ack(void)
+{
+	if (ACKSTAT)
+	{
+		/* Do debug print here if required */
+	}
+}
+
+void i2c_start(void)
+{
+	SEN = 1;
+	i2c_idle();
+}
+
+void i2c_stop(void)
+{
+	PEN = 1;
+	i2c_idle();
+}
+
+void i2c_rep_start(void)
+{
+	RSEN = 1;
+	i2c_idle();
+}
+
+void i2c_write(unsigned char data)
+{
+	SSPBUF = data;
+	i2c_idle();
+}
+
+void i2c_rx_mode(void)
+{
+	RCEN = 1;
+	i2c_idle();
+}
+
+void i2c_no_ack(void)
+{
+	ACKDT = 1;
+	ACKEN = 1;
+}
+
+unsigned char i2c_read(void)
+{
+	i2c_rx_mode();
+	i2c_no_ack();
+
+	return SSPBUF;
+}
